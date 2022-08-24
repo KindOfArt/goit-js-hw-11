@@ -23,7 +23,6 @@ p {
 .search-form > button {
   padding: 5px;
   margin: 0;
-  /* background-color: transparent; */
   border: none;
   border-radius: 12px;
 
@@ -36,15 +35,11 @@ p {
   transform: translateY(1.5px);
 }
 
-/* .search-item {
-  outline: none;
-  border: none;
-  border-radius: 20px;
-  padding: 8px;
-} */
 /* ==================================== */
 
 .load-more {
+  margin: 0 auto;
+  display: block;
 }
 /* ==================================== */
 

@@ -9,10 +9,10 @@ const refs = {
   loadMoreBtn: document.querySelector('.load-more'),
 };
 
+refs.loadMoreBtn.style.display = 'none';
+
 refs.searchForm.addEventListener('submit', async evt => {
   evt.preventDefault();
-
-  refs.loadMoreBtn.style.display = 'none';
 
   const searchValue = evt.currentTarget.elements.searchQuery.value.trim();
 
@@ -21,13 +21,11 @@ refs.searchForm.addEventListener('submit', async evt => {
   }
   const images = await getImage(searchValue);
 
-  if (images) {
-    refs.loadMoreBtn.style.display = 'block';
-  }
-
   const markup = await createMarkup(images);
 
   addToHTML(markup);
+
+  refs.loadMoreBtn.style.display = 'block';
 
   const gallery = new SimpleLightbox('.gallery a', {
     scrollZoom: false,
@@ -77,7 +75,7 @@ async function getImage(searchValue) {
       safesearch: true,
     };
     const response = await axios.get(
-      `https://pixabay.com/api/?q=${searchValue}&page=1&per_page=80`,
+      `https://pixabay.com/api/?q=${searchValue}&page=1&per_page=15`,
       { params }
     );
 
