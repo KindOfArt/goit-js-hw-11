@@ -12,12 +12,18 @@ const refs = {
 refs.searchForm.addEventListener('submit', async evt => {
   evt.preventDefault();
 
-  const searchValue = evt.target.elements.searchQuery.value.trim();
+  refs.loadMoreBtn.style.display = 'none';
+
+  const searchValue = evt.currentTarget.elements.searchQuery.value.trim();
 
   if (!searchValue) {
     return;
   }
   const images = await getImage(searchValue);
+
+  if (images) {
+    refs.loadMoreBtn.style.display = 'block';
+  }
 
   const markup = await createMarkup(images);
 
@@ -71,7 +77,7 @@ async function getImage(searchValue) {
       safesearch: true,
     };
     const response = await axios.get(
-      `https://pixabay.com/api/?q=${searchValue}&page=1&per_page=10`,
+      `https://pixabay.com/api/?q=${searchValue}&page=1&per_page=80`,
       { params }
     );
 
