@@ -1,7 +1,16 @@
 import { Notify } from 'notiflix';
-import axios from 'axios';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
+
+import AxiosRequestService from './axiosRequest';
+import createMarkup from './markupForGallery';
+
+const requireImages = new AxiosRequestService();
+const gallery = new SimpleLightbox('.gallery a', {
+  scrollZoom: false,
+  captionsData: 'alt',
+  captionDelay: 250,
+});
 
 const refs = {
   searchForm: document.querySelector('#search-form'),
@@ -11,76 +20,62 @@ const refs = {
 
 refs.loadMoreBtn.style.display = 'none';
 
-refs.searchForm.addEventListener('submit', async evt => {
+refs.searchForm.addEventListener('submit', onSearch);
+refs.loadMoreBtn.addEventListener('click', onLoadMore);
+
+async function onSearch(evt) {
   evt.preventDefault();
+
+  clearMarkup();
+  refs.loadMoreBtn.style.display = 'none';
 
   const searchValue = evt.currentTarget.elements.searchQuery.value.trim();
 
   if (!searchValue) {
     return;
   }
-  const images = await getImage(searchValue);
 
-  const markup = await createMarkup(images);
+  requireImages.query = searchValue;
+  requireImages.resetPage();
+
+  const images = await requireImages.getImage();
+
+  const markup = await createMarkup(images.hits);
 
   addToHTML(markup);
 
-  refs.loadMoreBtn.style.display = 'block';
+  gallery.refresh();
 
-  const gallery = new SimpleLightbox('.gallery a', {
-    scrollZoom: false,
-    captionsData: 'alt',
-    captionDelay: 250,
-  });
-});
+  if (refs.gallery.childElementCount > 0) {
+    showLoadMoreBtn();
+  }
+}
+
+async function onLoadMore() {
+  const images = await requireImages.getImage();
+
+  const markup = await createMarkup(images.hits);
+
+  addToHTML(markup);
+
+  if (refs.gallery.childElementCount === images.totalHits.length) {
+    Notify.failure('ERORROROROROROR');
+    return;
+  }
+
+  gallery.refresh();
+
+  refs.loadMoreBtn.style.display = 'block';
+}
 
 function addToHTML(markup) {
-  refs.gallery.innerHTML = '';
   refs.gallery.insertAdjacentHTML('beforeend', markup);
 }
 
-function createMarkup(images) {
-  return images
-    .map(image => {
-      return `
-      <div class="gallery__item">
-        <a class="gallery__link" href="${image.largeImageURL}">
-            <img class="gallery__image" src="${image.webformatURL}" alt="${image.tags}" loading="lazy" />
-        </a>
-        <div class="gallery__info">
-            <p class="gallery__info-item">
-                <b>Likes ${image.likes}</b>
-            </p>
-            <p class="gallery__info-item">
-                <b>Views ${image.views}</b>
-            </p>
-            <p class="gallery__info-item">
-                <b>Comments ${image.comments}</b>
-            </p>
-            <p class="gallery__info-item">
-                <b>Downloads ${image.downloads}</b>
-            </p>
-        </div>
-    </div>`;
-    })
-    .join('');
+function clearMarkup() {
+  refs.gallery.innerHTML = '';
 }
 
-async function getImage(searchValue) {
-  try {
-    const params = {
-      key: '28415242-e0e8b03e245983e2ec7e6c358',
-      image_type: 'photo',
-      orientation: 'horizontal',
-      safesearch: true,
-    };
-    const response = await axios.get(
-      `https://pixabay.com/api/?q=${searchValue}&page=1&per_page=15`,
-      { params }
-    );
-
-    return response.data.hits;
-  } catch (error) {
-    console.error(error);
-  }
+function showLoadMoreBtn() {
+  refs.loadMoreBtn.style.display = 'block';
 }
