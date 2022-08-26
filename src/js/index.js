@@ -23,11 +23,14 @@ refs.loadMoreBtn.style.display = 'none';
 refs.searchForm.addEventListener('submit', onSearch);
 refs.loadMoreBtn.addEventListener('click', onLoadMore);
 
+let totalHits = 0;
+
+refs.loadMoreBtn.style.display = 'none';
+
 async function onSearch(evt) {
   evt.preventDefault();
 
   clearMarkup();
-  refs.loadMoreBtn.style.display = 'none';
 
   const searchValue = evt.currentTarget.elements.searchQuery.value.trim();
 
@@ -40,32 +43,42 @@ async function onSearch(evt) {
 
   const images = await requireImages.getImage();
 
-  const markup = await createMarkup(images.hits);
+  if (images.hits.length === 0) {
+    Notify.failure('Please, write the correct query');
+    return;
+  }
+
+  totalHits = images.totalHits;
+  Notify.success(`Hooray! We found ${totalHits} images.`);
+
+  totalHits -= images.hits.length;
+
+  const markup = createMarkup(images.hits);
 
   addToHTML(markup);
 
-  gallery.refresh();
+  toggleLoadMoreBtn(totalHits);
 
-  if (refs.gallery.childElementCount > 0) {
-    showLoadMoreBtn();
-  }
+  gallery.refresh();
 }
 
 async function onLoadMore() {
   const images = await requireImages.getImage();
 
-  const markup = await createMarkup(images.hits);
+  const markup = createMarkup(images.hits);
+
+  totalHits -= images.hits.length;
 
   addToHTML(markup);
 
-  if (refs.gallery.childElementCount === images.totalHits.length) {
-    Notify.failure('ERORROROROROROR');
+  if (totalHits === 0 || totalHits < 0) {
+    Notify.info("We're sorry, but you've reached the end of search results.");
     return;
   }
 
-  gallery.refresh();
+  toggleLoadMoreBtn(totalHits);
 
-  refs.loadMoreBtn.style.display = 'block';
+  gallery.refresh();
 }
 
 function addToHTML(markup) {
@@ -76,6 +89,10 @@ function clearMarkup() {
   refs.gallery.innerHTML = '';
 }
 
-function showLoadMoreBtn() {
-  refs.loadMoreBtn.style.display = 'block';
+function toggleLoadMoreBtn(hitsValue) {
+  if (hitsValue === 0 || hitsValue < 0) {
+    refs.loadMoreBtn.style.display = 'none';
+  } else {
+    refs.loadMoreBtn.style.display = 'block';
+  }
 }
